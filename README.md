@@ -1,4 +1,4 @@
-```http
+```bash
 Este proyecto fue realizado por los siguientes integrantes:
 ```
 
