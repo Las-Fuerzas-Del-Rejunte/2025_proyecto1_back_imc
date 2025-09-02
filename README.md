@@ -1,4 +1,6 @@
+```http
 Este proyecto fue realizado por los siguientes integrantes:
+```
 
 | Nombre Completo               | Legajo | Email                          |
 |------------------------------|--------|--------------------------------|
