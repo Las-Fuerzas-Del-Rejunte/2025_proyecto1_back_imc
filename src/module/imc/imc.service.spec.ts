@@ -45,4 +45,19 @@ describe('ImcService', () => {
     expect(result.imc).toBeCloseTo(32.65, 2);
     expect(result.categoria).toBe('Obeso');
   });
+
+  it('should throw an error if altura is 0', () => {
+    const dto: CalcularImcDto = { altura: 0, peso: 70 };
+    expect(() => service.calcularImc(dto)).toThrowError('La altura debe ser mayor que 0');
+  });
+
+  it('should integrate correctly with another module', async () => {
+    // Simulación de integración con otro módulo
+    const dto: CalcularImcDto = { altura: 1.8, peso: 75 };
+    const result = service.calcularImc(dto);
+
+    // Supongamos que otro módulo valida la categoría
+    const categoriaValida = ['Bajo peso', 'Normal', 'Sobrepeso', 'Obeso'].includes(result.categoria);
+    expect(categoriaValida).toBe(true);
+  });
 });

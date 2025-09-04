@@ -50,4 +50,22 @@ describe('ImcController', () => {
     // Verificar que el servicio no se llama porque la validación falla antes
     expect(service.calcularImc).not.toHaveBeenCalled();
   });
+
+  it('should calculate IMC correctly with more than two decimals', async () => {
+    const dto: CalcularImcDto = { altura: 1.75555, peso: 70.12345 };
+    jest.spyOn(service, 'calcularImc').mockReturnValue({ imc: 22.76, categoria: 'Normal' });
+
+    const result = await controller.calcular(dto);
+    expect(result).toEqual({ imc: 22.76, categoria: 'Normal' });
+    expect(service.calcularImc).toHaveBeenCalledWith(dto);
+  });
+
+  it('should integrate correctly with the service for edge case', async () => {
+    const dto: CalcularImcDto = { altura: 1.6, peso: 100 };
+    jest.spyOn(service, 'calcularImc').mockReturnValue({ imc: 39.06, categoria: 'Obeso' });
+
+    const result = await controller.calcular(dto);
+    expect(result).toEqual({ imc: 39.06, categoria: 'Obeso' });
+    expect(service.calcularImc).toHaveBeenCalledWith(dto);
+  });
 });
