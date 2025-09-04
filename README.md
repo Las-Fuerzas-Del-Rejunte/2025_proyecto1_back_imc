@@ -61,12 +61,11 @@ $ yarn run start:prod
 ## Run tests
 
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
+# unit tests and integrations tests
+$ yarn test --verbose src/module/imc/imc.service.spec.ts
+$ yarn test --verbose src/module/imc/imc.controller.spec.ts
+```
+```bash
 # test coverage
 $ yarn run test:cov
 ```
