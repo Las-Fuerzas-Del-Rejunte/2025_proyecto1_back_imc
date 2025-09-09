@@ -11,7 +11,6 @@ async function bootstrap() {
     .setTitle('IMC API')
     .setDescription('API para el cálculo del IMC')
     .setVersion('1.0')
-    .addTag('imc')
     .build();
   const document = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, document);
