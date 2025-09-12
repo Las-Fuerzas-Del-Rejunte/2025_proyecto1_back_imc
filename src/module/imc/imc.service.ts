@@ -1,13 +1,15 @@
 import { Injectable } from "@nestjs/common";
 import { CalcularImcDto } from "./dto/calcular-imc-dto";
-
+import { PrismaService } from "../../prisma.service";
 
 @Injectable()
 export class ImcService {
-  calcularImc(data: CalcularImcDto): { imc: number; categoria: string } {
+  constructor(private prisma: PrismaService) {}
+
+  async calcularImc(data: CalcularImcDto) {
     const { altura, peso } = data;
 
-    // Validaciones
+    // Validaciones (tal cual como tenías)
     if (altura === undefined || altura === null) {
       throw new Error('La altura es obligatoria');
     }
@@ -17,27 +19,15 @@ export class ImcService {
     if (typeof altura !== 'number' || typeof peso !== 'number') {
       throw new Error('Altura y peso deben ser números');
     }
-    if (altura <= 0) {
-      throw new Error('La altura debe ser mayor que 0');
+    if (altura <= 0 || altura >= 3) {
+      throw new Error('La altura debe estar entre 0 y 3 metros');
     }
-    if (altura >= 3) {
-      throw new Error('La altura debe ser menor que 3 metros');
-    }
-    if (peso < 1) {
-      throw new Error('El peso debe ser mayor o igual a 1 kg');
-    }
-    if (peso > 500) {
-      throw new Error('El peso debe ser menor o igual a 500 kg');
-    }
-    if (!/^\d+(\.\d{1,2})?$/.test(altura.toString())) {
-      throw new Error('La altura debe tener como máximo 2 decimales');
-    }
-    if (!/^\d+(\.\d{1,2})?$/.test(peso.toString())) {
-      throw new Error('El peso debe tener como máximo 2 decimales');
+    if (peso < 1 || peso > 500) {
+      throw new Error('El peso debe estar entre 1 y 500 kg');
     }
 
     const imc = peso / (altura * altura);
-    const imcRedondeado = Math.round(imc * 100) / 100; // Dos decimales
+    const imcRedondeado = Math.round(imc * 100) / 100;
 
     let categoria: string;
     if (imc < 18.5) {
@@ -50,7 +40,22 @@ export class ImcService {
       categoria = 'Obeso';
     }
 
-    return { imc: imcRedondeado, categoria };
+    // Guardar en Supabase usando Prisma
+    const registro = await this.prisma.imc.create({
+      data: {
+        peso,
+        altura,
+        resultado: imcRedondeado,
+        categoria,
+      },
+    });
+
+    return registro; // Devuelve lo que se guardó
+  }
+
+  async historial() {
+    return this.prisma.imc.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
   }
 }
-
