@@ -9,7 +9,7 @@ export class ImcService {
   async calcularImc(data: CalcularImcDto) {
     const { altura, peso } = data;
 
-    // Validaciones (tal cual como tenías)
+    // Validaciones
     if (altura === undefined || altura === null) {
       throw new Error('La altura es obligatoria');
     }
