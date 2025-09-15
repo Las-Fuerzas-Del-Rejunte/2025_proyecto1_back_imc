@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
-// 👇 cache del server para Vercel (serverless)
+// cache del server para Vercel (serverless)
 let cachedServer: any;
 
 async function bootstrap() {
@@ -23,14 +23,13 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('swagger', app, document);
 
-    // 👇 en Vercel no usamos listen, solo init
     await app.init();
     cachedServer = app.getHttpAdapter().getInstance();
   }
   return cachedServer;
 }
 
-// 👇 si estamos en Vercel exportamos el handler
+// si estamos en Vercel exportamos el handler
 declare const module: any;
 if (module?.exports) {
   module.exports = async (req: any, res: any) => {
@@ -38,7 +37,7 @@ if (module?.exports) {
     return server(req, res);
   };
 } else {
-  // 👇 si estamos en local, usamos listen(3000)
+  // si estamos en local, usamos listen(3000)
   bootstrap().then(async (app: any) => {
     if (app.listen) {
       await app.listen(3000);
