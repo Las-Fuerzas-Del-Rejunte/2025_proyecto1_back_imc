@@ -26,12 +26,16 @@ export class ImcController {
   @Get('historial')
   async historial(@Req() req: Request) {
     console.log('👤 Usuario recibido en req.user:', req.user);
-
     const userId = (req.user as any)?.id || (req.user as any)?.user_metadata?.sub;
-    if (!userId) {
-      throw new Error('Usuario no autenticado');
-    }
-
+    if (!userId) throw new Error('Usuario no autenticado');
     return this.imcService.historial(userId);
+  }
+
+  @Get('stats')
+  async stats(@Req() req: Request) {
+    console.log('📊 [IMC::Controller] Generando estadísticas...');
+    const userId = (req.user as any)?.id || (req.user as any)?.user_metadata?.sub;
+    if (!userId) throw new Error('Usuario no autenticado');
+    return this.imcService.getStats(userId);
   }
 }

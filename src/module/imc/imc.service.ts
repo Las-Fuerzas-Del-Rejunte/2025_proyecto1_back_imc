@@ -43,4 +43,34 @@ export class ImcService {
       orderBy: { createdAt: 'desc' },
     });
   }
+  async getStats(userId: string) {
+    try {
+      const historico = await this.prisma.imc.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'asc' },
+        select: { createdAt: true, resultado: true, peso: true, categoria: true },
+      });
+
+      const categorias = await this.prisma.imc.groupBy({
+        by: ['categoria'],
+        where: { userId },
+        _count: { categoria: true },
+      });
+
+      const metrics = await this.prisma.imc.aggregate({
+        where: { userId },
+        _avg: { resultado: true },
+        _count: true,
+      });
+
+      return {
+        historico,
+        categorias,
+        metrics,
+      };
+    } catch (err) {
+      console.error('❌ Error en getStats:', err);
+      throw err;
+    }
+  }
 }
