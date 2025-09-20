@@ -4,57 +4,42 @@ import { PrismaService } from "../../prisma.service";
 
 @Injectable()
 export class ImcService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  async calcularImc(data: CalcularImcDto) {
-    const { altura, peso } = data;
+  async calcularImc(data: CalcularImcDto, userId: string) {
+    try {
+      const { altura, peso } = data;
 
-    // Validaciones (tal cual como tenías)
-    if (altura === undefined || altura === null) {
-      throw new Error('La altura es obligatoria');
-    }
-    if (peso === undefined || peso === null) {
-      throw new Error('El peso es obligatorio');
-    }
-    if (typeof altura !== 'number' || typeof peso !== 'number') {
-      throw new Error('Altura y peso deben ser números');
-    }
-    if (altura <= 0 || altura >= 3) {
-      throw new Error('La altura debe estar entre 0 y 3 metros');
-    }
-    if (peso < 1 || peso > 500) {
-      throw new Error('El peso debe estar entre 1 y 500 kg');
-    }
+      if (!userId) throw new Error('❌ userId está vacío');
 
-    const imc = peso / (altura * altura);
-    const imcRedondeado = Math.round(imc * 100) / 100;
+      const imc = peso / (altura * altura);
+      const imcRedondeado = Math.round(imc * 100) / 100;
 
-    let categoria: string;
-    if (imc < 18.5) {
-      categoria = 'Bajo peso';
-    } else if (imc < 25) {
-      categoria = 'Normal';
-    } else if (imc < 30) {
-      categoria = 'Sobrepeso';
-    } else {
-      categoria = 'Obeso';
+      let categoria = 'Obeso';
+      if (imc < 18.5) categoria = 'Bajo peso';
+      else if (imc < 25) categoria = 'Normal';
+      else if (imc < 30) categoria = 'Sobrepeso';
+
+      console.log('💾 Intentando guardar en DB con:', { peso, altura, imcRedondeado, categoria, userId });
+
+      return await this.prisma.imc.create({
+        data: {
+          peso,
+          altura,
+          resultado: imcRedondeado,
+          categoria,
+          userId,
+        },
+      });
+    } catch (err) {
+      console.error('❌ Error en calcularImc:', err);
+      throw err;
     }
-
-    // Guardar en Supabase usando Prisma
-    const registro = await this.prisma.imc.create({
-      data: {
-        peso,
-        altura,
-        resultado: imcRedondeado,
-        categoria,
-      },
-    });
-
-    return registro; // Devuelve lo que se guardó
   }
 
-  async historial() {
+  async historial(userId: string) {
     return this.prisma.imc.findMany({
+      where: { userId },
       orderBy: { createdAt: 'desc' },
     });
   }
