@@ -16,4 +16,5 @@ model imc {
   resultado Float
   categoria String
   createdAt DateTime @default(now())
+  userId    String
 }

@@ -107,6 +107,12 @@ To view the API documentation, run the project locally and open http://localhost
 
 Note: Swagger UI is served from your local NestJS instance and is typically not exposed in Vercel production.
 
+# 📄 Documentación Proyecto IMC – NestJS + Prisma + Supabase
+
+API REST para calcular el Índice de Masa Corporal (IMC) construida con NestJS. Persistencia en Supabase (PostgreSQL) mediante Prisma ORM.
+
+[![Documentacion Notion](https://img.shields.io/badge/Notion-222?&logo=notion&labelColor=000000)](https://www.notion.so/Documentaci-n-Proyecto-IMC-NestJS-Prisma-Supabase-1-26a18282bc9e80f2acd7fb18612cf898?source=copy_link)
+
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
