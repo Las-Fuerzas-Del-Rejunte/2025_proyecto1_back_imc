@@ -7,6 +7,8 @@ import { BadRequestException, ValidationPipe } from '@nestjs/common';
 describe('ImcController', () => {
   let controller: ImcController;
   let service: ImcService;
+  const userId = 'test-user-1';
+  const req = { user: { id: userId } } as any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -37,13 +39,14 @@ describe('ImcController', () => {
       resultado: 22.86,
       categoria: 'Normal',
       createdAt: new Date(),
+      userId,
       id: 1,
-    });
+    } as any);
 
-    const result = await controller.calcular(dto);
+    const result = await controller.calcular(dto, req);
     expect(result.resultado).toBe(22.86);
     expect(result.categoria).toBe('Normal');
-    expect(service.calcularImc).toHaveBeenCalledWith(dto);
+    expect(service.calcularImc).toHaveBeenCalledWith(dto, userId);
   });
 
   it('debería lanzar BadRequestException para una entrada inválida', async () => {
@@ -67,13 +70,14 @@ describe('ImcController', () => {
       resultado: 22.76,
       categoria: 'Normal',
       createdAt: new Date(),
+      userId,
       id: 1,
-    });
+    } as any);
 
-    const result = await controller.calcular(dto);
+    const result = await controller.calcular(dto, req);
     expect(result.resultado).toBe(22.76);
     expect(result.categoria).toBe('Normal');
-    expect(service.calcularImc).toHaveBeenCalledWith(dto);
+    expect(service.calcularImc).toHaveBeenCalledWith(dto, userId);
   });
 
   it('debería integrarse correctamente con el servicio en caso límite', async () => {
@@ -84,12 +88,13 @@ describe('ImcController', () => {
       resultado: 39.06,
       categoria: 'Obeso',
       createdAt: new Date(),
+      userId,
       id: 1,
-    });
+    } as any);
 
-    const resultado = await controller.calcular(dto);
+    const resultado = await controller.calcular(dto, req);
     expect(resultado.resultado).toBe(39.06);
     expect(resultado.categoria).toBe('Obeso');
-    expect(service.calcularImc).toHaveBeenCalledWith(dto);
+    expect(service.calcularImc).toHaveBeenCalledWith(dto, userId);
   });
 });

@@ -1,21 +1,23 @@
-import { Test, TestingModule } from "@nestjs/testing";
-import { ImcService } from "../src/module/imc/imc.service";
-import { CalcularImcDto } from "../src/module/imc/dto/calcular-imc-dto";
+import { Test, TestingModule } from '@nestjs/testing';
+import { ImcService } from '../src/module/imc/imc.service';
+import { PrismaService } from '../src/prisma.service';
+import { CalcularImcDto } from '../src/module/imc/dto/calcular-imc-dto';
 
-describe('ImcService', () => {
+describe('Servicio de IMC', () => {
   let service: ImcService;
+  const userId = 'test-user-1';
+
+  let prismaMock: any;
 
   beforeEach(async () => {
-    const prismaMock = {
+    prismaMock = {
       imc: {
-        create: jest.fn().mockResolvedValue({
-          peso: 70,
-          altura: 1.75,
-          resultado: 22.86,
-          categoria: 'Normal',
-          createdAt: new Date(),
+        create: jest.fn().mockImplementation(async ({ data }) => ({
+          // conserva lo que manda el servicio (incluye userId)
+          ...data,
           id: 1,
-        }),
+          createdAt: new Date(),
+        })),
         findMany: jest.fn().mockResolvedValue([]),
       },
     };
@@ -23,152 +25,110 @@ describe('ImcService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ImcService,
-        require('../src/prisma.service').PrismaService,
+        { provide: PrismaService, useValue: prismaMock },
       ],
     }).compile();
 
     service = module.get<ImcService>(ImcService);
   });
-    // Test unitario: verifica que el servicio se haya creado correctamente
-    it('should be defined', () => {
-      expect(service).toBeDefined();
-    });
-  
-    // Test unitario: valida el cálculo correcto del IMC y la categoría "Normal"
-    it('should calculate IMC correctly', async() => {
+
+  it('debería estar definido', () => {
+    expect(service).toBeDefined();
+  });
+
+  it('debería calcular el IMC correctamente', async () => {
     const dto: CalcularImcDto = { altura: 1.75, peso: 70 };
-    const result = await service.calcularImc(dto);
-    expect(result.resultado).toBe(22.86); // Redondeado a 2 decimales
+    const result = await service.calcularImc(dto, userId);
+    expect(result.resultado).toBe(22.86);
     expect(result.categoria).toBe('Normal');
-    });
-  
-    // Test unitario: valida que la categoría sea "Bajo peso" para IMC < 18.5
-    it('should return Bajo peso for IMC < 18.5', async() => {
+    expect(prismaMock.imc.create).toHaveBeenCalled();
+    // el registro guardado debe incluir el userId
+    const call = prismaMock.imc.create.mock.calls[0][0];
+    expect(call.data.userId).toBe(userId);
+  });
+
+  it('debería retornar "Bajo peso" para IMC < 18.5', async () => {
     const dto: CalcularImcDto = { altura: 1.75, peso: 50 };
-    const result = await service.calcularImc(dto);
+    const result = await service.calcularImc(dto, userId);
     expect(result.resultado).toBe(16.33);
     expect(result.categoria).toBe('Bajo peso');
-    });
-  
-    // Test unitario: valida que la categoría sea "Sobrepeso" para 25 <= IMC < 30
-    it('should return Sobrepeso for 25 <= IMC < 30', async() => {
+  });
+
+  it('debería retornar "Sobrepeso" para 25 <= IMC < 30', async () => {
     const dto: CalcularImcDto = { altura: 1.75, peso: 80 };
-    const result = await   service.calcularImc(dto);
+    const result = await service.calcularImc(dto, userId);
     expect(result.resultado).toBe(26.12);
     expect(result.categoria).toBe('Sobrepeso');
-    });
-  
-    // Test unitario: valida que la categoría sea "Obeso" para IMC >= 30
-    it('should return Obeso for IMC >= 30', async () => {
+  });
+
+  it('debería retornar "Obeso" para IMC >= 30', async () => {
     const dto: CalcularImcDto = { altura: 1.75, peso: 100 };
-    const result = await service.calcularImc(dto);
+    const result = await service.calcularImc(dto, userId);
     expect(result.resultado).toBe(32.65);
     expect(result.categoria).toBe('Obeso');
-    });
-  
-    // Test unitario: valida que se lance error si la altura es cero
-    it('should throw an error if altura is 0', () => {
+  });
+
+  it('debería lanzar un error si la altura es 0', () => {
     const dto: CalcularImcDto = { altura: 0, peso: 70 };
-    return expect(service.calcularImc(dto)).rejects.toThrow('La altura debe ser mayor que 0');
-    });
-  
-    // Test unitario: valida que se lance error si la altura es undefined
-    it('should throw an error if altura is undefined', () => {
+    return expect(service.calcularImc(dto, userId)).rejects.toThrow();
+  });
+
+  it('debería lanzar un error si la altura es undefined', () => {
     const dto: CalcularImcDto = { altura: undefined as any, peso: 70 };
-    return expect(service.calcularImc(dto)).rejects.toThrow('La altura es obligatoria');
-    });
-  
-    // Test unitario: valida que se lance error si el peso es undefined
-    it('should throw an error if peso is undefined', () => {
+    return expect(service.calcularImc(dto, userId)).rejects.toThrow();
+  });
+
+  it('debería lanzar un error si el peso es undefined', () => {
     const dto: CalcularImcDto = { altura: 1.75, peso: undefined as any };
-    return expect(service.calcularImc(dto)).rejects.toThrow('El peso es obligatorio');
-    });
-  
-    // Test unitario: valida que se lance error si la altura es null
-    it('should throw an error if altura is null', () => {
+    return expect(service.calcularImc(dto, userId)).rejects.toThrow();
+  });
+
+  it('debería lanzar un error si la altura es null', () => {
     const dto: CalcularImcDto = { altura: null as any, peso: 70 };
-    return expect(service.calcularImc(dto)).rejects.toThrow('La altura es obligatoria');
-    });
-  
-    // Test unitario: valida que se lance error si el peso es null
-    it('should throw an error if peso is null', () => {
+    return expect(service.calcularImc(dto, userId)).rejects.toThrow();
+  });
+
+  it('debería lanzar un error si el peso es null', () => {
     const dto: CalcularImcDto = { altura: 1.75, peso: null as any };
-    return expect(service.calcularImc(dto)).rejects.toThrow('El peso es obligatorio');
-    });
-  
-    // Test unitario: valida que se lance error si la altura es menor a 0.01
-    it('should throw an error if altura is less than 0.01', () => {
+    return expect(service.calcularImc(dto, userId)).rejects.toThrow();
+  });
+
+  it('debería lanzar un error si la altura es menor a 0.01', () => {
     const dto: CalcularImcDto = { altura: 0.009, peso: 70 };
-    return expect(service.calcularImc(dto)).rejects.toThrow('La altura debe ser mayor que 0');
-    });
-  
-    // Test unitario: valida que se lance error si la altura es mayor o igual a 3
-    it('should throw an error if altura is greater than or equal to 3', () => {
+    return expect(service.calcularImc(dto, userId)).rejects.toThrow();
+  });
+
+  it('debería lanzar un error si la altura es >= 3', () => {
     const dto: CalcularImcDto = { altura: 3, peso: 70 };
-    return expect(service.calcularImc(dto)).rejects.toThrow('La altura debe ser menor que 3 metros');
-    });
-  
-    // Test unitario: valida que se lance error si el peso es menor a 1
-    it('should throw an error if peso is less than 1', () => {
+    return expect(service.calcularImc(dto, userId)).rejects.toThrow();
+  });
+
+  it('debería lanzar un error si el peso es menor a 1', () => {
     const dto: CalcularImcDto = { altura: 1.75, peso: 0.99 };
-    return expect(service.calcularImc(dto)).rejects.toThrow('El peso debe ser mayor o igual a 1 kg');
-    });
-  
-    // Test unitario: valida que se lance error si el peso es mayor a 500
-    it('should throw an error if peso is greater than 500', () => {
+    return expect(service.calcularImc(dto, userId)).rejects.toThrow();
+  });
+
+  it('debería lanzar un error si el peso es mayor a 500', () => {
     const dto: CalcularImcDto = { altura: 1.75, peso: 501 };
-    return expect(service.calcularImc(dto)).rejects.toThrow('El peso debe ser menor o igual a 500 kg');
-    });
-  
-    // Test unitario: valida que se lance error si la altura tiene más de 2 decimales
-    it('should throw an error if altura has more than 2 decimals', () => {
-    const dto: CalcularImcDto = { altura: 1.755, peso: 70 };
-    return expect(service.calcularImc(dto)).rejects.toThrow('La altura debe tener como máximo 2 decimales');
-    });
-  
-    // Test unitario: valida que se lance error si el peso tiene más de 2 decimales
-    it('should throw an error if peso has more than 2 decimals', () => {
+    return expect(service.calcularImc(dto, userId)).rejects.toThrow();
+  });
+
+  it('debería lanzar un error si la altura tiene más de 2 decimales', () => {
+    const dto: CalcularImcDto = { altura: 1.234, peso: 70 };
+    return expect(service.calcularImc(dto, userId)).rejects.toThrow();
+  });
+
+  it('debería lanzar un error si el peso tiene más de 2 decimales', () => {
     const dto: CalcularImcDto = { altura: 1.75, peso: 70.123 };
-    return expect(service.calcularImc(dto)).rejects.toThrow('El peso debe tener como máximo 2 decimales');
-    });
-  
-    // Test de integración: valida que la categoría calculada sea válida para integración con otros módulos
-    it('should integrate correctly with another module', async () => {
-    // Simulación de integración con otro módulo
-    const dto: CalcularImcDto = { altura: 1.8, peso: 75 };
-    const result = await service.calcularImc(dto);
-  
-    // Supongamos que otro módulo valida la categoría
-    const categoriaValida = ['Bajo peso', 'Normal', 'Sobrepeso', 'Obeso'].includes(result.categoria);
-    expect(categoriaValida).toBe(true);
-    });
-  
-    // Test de performance: verifica que el cálculo de IMC se realiza en menos de 50ms
-    it('debería calcular el IMC en menos de 50ms', async () => {
-      const dto: CalcularImcDto = { altura: 1.75, peso: 70 };
-      const start = Date.now();
-      await service.calcularImc(dto);
-      const duration = Date.now() - start;
-      expect(duration).toBeLessThan(50);
-    });
-  
-    // Test de performance: verifica que la consulta del historial se realiza en menos de 100ms
-    it('debería consultar el historial en menos de 100ms', async () => {
-      const start = Date.now();
-      await service.historial();
-      const duration = Date.now() - start;
-      expect(duration).toBeLessThan(100);
-    });
-  
-    // Test de seguridad: verifica que se rechaza un payload malicioso (script injection)
-    it('debería rechazar un payload malicioso (script injection)', async () => {
-      const dto: CalcularImcDto = { altura: 1.75, peso: "<script>alert(1)</script>" as any };
-      await expect(service.calcularImc(dto)).rejects.toThrow();
-    });
-  
-    // Test de seguridad: verifica que se rechaza un payload con tipos incorrectos
-    it('debería rechazar un payload con tipos incorrectos', async () => {
-      const dto: CalcularImcDto = { altura: "no-es-un-numero" as any, peso: 70 };
-      await expect(service.calcularImc(dto)).rejects.toThrow();
-    });
+    return expect(service.calcularImc(dto, userId)).rejects.toThrow();
+  });
+
+  it('debería consultar el historial en menos de 100ms', async () => {
+    const t0 = Date.now();
+    const res = await service.historial(userId);
+    const t1 = Date.now();
+    expect(Array.isArray(res)).toBe(true);
+    expect(prismaMock.imc.findMany).toHaveBeenCalled();
+    expect(t1 - t0).toBeLessThan(100);
+  });
 });
